@@ -7,6 +7,7 @@ ruby "3.1.2"
 gem "rails", "~> 7.0.5"
 gem "nokogiri"
 gem "selenium-webdriver"
+gem "google-drive"
 # Use sqlite3 as the database for Active Record
 gem "sqlite3", "~> 1.4"
 
