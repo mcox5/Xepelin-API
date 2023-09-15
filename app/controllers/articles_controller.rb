@@ -1,6 +1,8 @@
 require 'nokogiri'
 require 'selenium-webdriver'
 require 'google_drive'
+require 'httparty'
+
 class ArticlesController < ApplicationController
   def index
     head :ok
@@ -9,14 +11,14 @@ class ArticlesController < ApplicationController
   def scrapping
     categories = ['emprendedores', 'pymes', 'corporativos', 'empresarios-exitosos', 'educacion-financiera', 'noticias']
     request_data = JSON.parse(request.body.read)
-    if categories.include?(request_data['category']) && request_data["url"].is_a?(String)
+    if categories.include?(request_data['category']) && request_data["webhook"].is_a?(String)
       category = request_data['category']
       webhook = request_data['webhook']
       clean_google_sheets # 1: Limpiamos la hoja de calculo
       articles_info = get_articles_info(category) # 2: Obtenemos los articulos
       write_google_sheets(articles_info) # 3: Escribimos en la hoja de calculo
-      # 4: Hacemos Request a la webhook con el link del googlesheet y el mail como body
-      render json: { message: 'Solicitud de scrapping recibida!' }, status: :ok
+      post_request(webhook) # 4: Hacemos Request a la webhook con el link del googlesheet y el mail como body
+      render json: { message: 'Solicitud de scrapping recibida y hoja de calculo actualizada!' }, status: :ok
     else
       render json: { error: 'Argumentos incorrectos en el cuerpo de la solicitud' }, status: :bad_request
     end
@@ -82,7 +84,6 @@ class ArticlesController < ApplicationController
     spreadsheet = session.spreadsheet_by_title("GoogleSheets app")
     worksheet = spreadsheet.worksheets[1]
     articles_info.each do |_key, value|
-      p 'esta es la info...', value
       worksheet.insert_rows(worksheet.num_rows + 1, [[value[:title], value[:author], value[:category], value[:time], '--']])
     end
     worksheet.save
@@ -105,5 +106,19 @@ class ArticlesController < ApplicationController
     end
     # Guarda los cambios en la hoja de cálculo
     worksheet.save
+  end
+
+  def post_request(webhook_url)
+    body = {
+      link: 'https://docs.google.com/spreadsheets/d/1_6TgW-8cP3B-QdbkE0F3UJ3v9hdDw4cWXzgBu0Qt2zw',
+      email: 'mcox5@uc.cl'
+    }
+    response = HTTParty.post(webhook_url, body: body.to_json, headers: { 'Content-Type' => 'application/json' })
+    p response
+    if response.success?
+      puts "Solicitud exitosa. Respuesta del servidor: #{response.body}"
+    else
+      puts "Error en la solicitud. Código de estado: #{response.code}, Mensaje: #{response.message}"
+    end
   end
 end
