@@ -37,7 +37,7 @@ class ArticlesController < ApplicationController
       options.add_argument('--no-sandbox')
       options.add_argument('--disable-gpu')
       options.add_argument('--disable-software-rasterizer')
-      options.add_argument("--chromedriver-version=116.0.5845.0")
+      options.add_argument("--chromedriver-version=116.0.5845.96")
 
 
       chrome_bin = ENV.fetch('GOOGLE_CHROME_SHIM', nil)
@@ -45,7 +45,7 @@ class ArticlesController < ApplicationController
 
       driver = Selenium::WebDriver.for :chrome, options: options
       driver.get(url)
-      sleep(2)
+      sleep(1)
       doc = Nokogiri::HTML(driver.page_source)
       articles = doc.search('.BlogArticle_box__OYCvH .BlogArticle_content__rH5u2') # Para buscar los articulos
       articles_object = {}
@@ -57,6 +57,7 @@ class ArticlesController < ApplicationController
         article_info[:time] = get_lecture_time(category, article_info[:title]) || 'No se pudo obtener el tiempo (url no encontrada)'
         articles_object[article_info[:title]] = article_info
       end
+      puts 'este es mi article object', articles_object
       return articles_object
     rescue StandardError => e
       p "Error: #{e.message}"
@@ -83,7 +84,7 @@ class ArticlesController < ApplicationController
 
       driver = Selenium::WebDriver.for :chrome, options: options
       driver.get(url)
-      sleep(2)
+      sleep(1)
       doc = Nokogiri::HTML(driver.page_source)
       time = doc.search('.iaKuDo .justify-center .sc-fe594033-0').children.text.split(' ').first
       return time
@@ -100,7 +101,7 @@ class ArticlesController < ApplicationController
   end
 
   def write_google_sheets(articles_info)
-    p 'writing...'
+    p 'writing Sheets'
     session = GoogleDrive::Session.from_service_account_key("client_secret.json")
     spreadsheet = session.spreadsheet_by_title("GoogleSheets app")
     worksheet = spreadsheet.worksheets[1]
@@ -111,6 +112,7 @@ class ArticlesController < ApplicationController
   end
 
   def clean_google_sheets
+    p 'cleaning Sheets'
     session = GoogleDrive::Session.from_service_account_key('client_secret.json')
     spreadsheet = session.spreadsheet_by_title('GoogleSheets app')
     worksheet = spreadsheet.worksheets[1]
