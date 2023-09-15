@@ -9,6 +9,9 @@ gem "nokogiri"
 gem "selenium-webdriver"
 gem "google-drive"
 gem "httparty"
+gem "sidekiq"
+gem "sidekiq-failures", "~> 1.0"
+
 # Use sqlite3 as the database for Active Record
 gem "sqlite3", "~> 1.4"
 
