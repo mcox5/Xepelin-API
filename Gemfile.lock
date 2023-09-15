@@ -73,6 +73,7 @@ GEM
       msgpack (~> 1.2)
     builder (3.2.4)
     concurrent-ruby (1.2.2)
+    connection_pool (2.3.0)
     contracts (0.17)
     crass (1.0.6)
     date (3.3.3)
@@ -274,6 +275,7 @@ GEM
       ffi (~> 1.0)
     rdoc (6.5.0)
       psych (>= 4.0.0)
+    redis (4.8.1)
     reline (0.3.8)
       io-console (~> 0.5)
     representable (3.2.0)
@@ -291,6 +293,12 @@ GEM
       rubyzip (>= 1.2.2, < 3.0)
       websocket (~> 1.0)
     servolux (0.13.0)
+    sidekiq (6.5.8)
+      connection_pool (>= 2.2.5, < 3)
+      rack (~> 2.0)
+      redis (>= 4.5.0, < 5)
+    sidekiq-failures (1.0.4)
+      sidekiq (>= 4.0.0)
     signet (0.18.0)
       addressable (~> 2.8)
       faraday (>= 0.17.5, < 3.a)
@@ -334,6 +342,8 @@ DEPENDENCIES
   puma (~> 5.0)
   rails (~> 7.0.5)
   selenium-webdriver
+  sidekiq
+  sidekiq-failures (~> 1.0)
   sqlite3 (~> 1.4)
   tzinfo-data
 
