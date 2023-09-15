@@ -37,6 +37,8 @@ class ArticlesController < ApplicationController
       options.add_argument('--no-sandbox')
       options.add_argument('--disable-gpu')
       options.add_argument('--disable-software-rasterizer')
+      options.add_argument("--chromedriver-version=116.0.5845.0")
+
 
       chrome_bin = ENV.fetch('GOOGLE_CHROME_SHIM', nil)
       options.binary = chrome_bin if chrome_bin
@@ -73,10 +75,12 @@ class ArticlesController < ApplicationController
       options.add_argument('--no-sandbox')
       options.add_argument('--disable-gpu')
       options.add_argument('--disable-software-rasterizer')
+      options.add_argument("--chromedriver-version=116.0.5845.0")
+
 
       chrome_bin = ENV.fetch('GOOGLE_CHROME_SHIM', nil)
       options.binary = chrome_bin if chrome_bin
-      
+
       driver = Selenium::WebDriver.for :chrome, options: options
       driver.get(url)
       sleep(2)
