@@ -3,23 +3,15 @@ require 'selenium-webdriver'
 require 'google_drive'
 require 'httparty'
 
-class ArticlesController < ApplicationController
-  def index
-    head :ok
-  end
+class ScrappingJob < ApplicationJob
+  queue_as :default
 
-  def scrapping
-    puts 'SCRAPPING!'
-    categories = ['emprendedores', 'pymes', 'corporativos', 'empresarios-exitosos', 'educacion-financiera', 'noticias']
-    request_data = JSON.parse(request.body.read)
-    if categories.include?(request_data['category']) && request_data["webhook"].is_a?(String)
-      category = request_data['category']
-      webhook = request_data['webhook']
-      ScrappingJob.perform_later(category, webhook)
-      render json: { message: 'Solicitud exitosa, se está ejecutando el scrapping, por favor espere...' }, status: :ok
-    else
-      render json: { message: 'Error en la solicitud, entregaste mal los parámetros del body' }, status: :bad_request
-    end
+  def perform(category, webhook)
+    clean_google_sheets # 1: Limpiamos la hoja de calculo
+    articles_info = get_articles_info(category) # 2: Obtenemos los articulos
+    write_google_sheets(articles_info) # 3: Escribimos en la hoja de calculo
+    post_request(webhook) # 4: Hacemos Request a la webhook con el link del googlesheet y el mail como body
+    puts 'Hoja de calculo actualizada y webhook enviada!'
   end
 
   private
@@ -35,11 +27,8 @@ class ArticlesController < ApplicationController
       options.add_argument('--disable-gpu')
       options.add_argument('--disable-software-rasterizer')
       options.add_argument("--chromedriver-version=116.0.5845.96")
-
-
       chrome_bin = ENV.fetch('GOOGLE_CHROME_SHIM', nil)
       options.binary = chrome_bin if chrome_bin
-
       driver = Selenium::WebDriver.for :chrome, options: options
       driver.get(url)
       sleep(1)
