@@ -1,5 +1,6 @@
 require 'nokogiri'
 require 'selenium-webdriver'
+require 'google_drive'
 
 class ArticlesController < ApplicationController
   def index
@@ -7,8 +8,18 @@ class ArticlesController < ApplicationController
   end
 
   def scrapping
-    result = get_articles_info('emprendedores')
-    render json: { articles: result }
+    request_data = JSON.parse(request.body.read)
+    if request_data["category"].is_a?(String) && request_data["url"].is_a?(String)
+      category = request_data['category']
+      webhook = request_data['webhook']
+      clean_google_sheets # 1: Limpiamos la hoja de calculo
+      articles_info = get_articles_info(category) # 2: Obtenemos los articulos
+      write_google_sheets(articles_info) # 3: Escribimos en la hoja de calculo
+      # 4: Hacemos Request a la webhook con el link del googlesheet y el mail como body
+      render json: { message: 'Solicitud de scrapping recibida!' }, status: :ok
+    else
+      render json: { error: 'Argumentos incorrectos en el cuerpo de la solicitud' }, status: :bad_request
+    end
   end
 
   private
@@ -17,23 +28,13 @@ class ArticlesController < ApplicationController
     puts 'Starting web_scrapping_xepelin....'
     url = "https://xepelin.com/blog/#{category}"
     begin
-      # Configurar el controlador de Selenium
       options = Selenium::WebDriver::Chrome::Options.new
       options.add_argument('--headless') # Ejecutar Chrome en modo headless (sin interfaz gráfica)
       driver = Selenium::WebDriver.for :chrome, options: options
-
-      # Abrir la página en el navegador
       driver.get(url)
-
-      # Esperar un momento para que la página cargue completamente (puedes ajustar el tiempo según sea necesario)
       sleep(2)
-
-      # Obtener el HTML de la página después de que se haya cargado
       doc = Nokogiri::HTML(driver.page_source)
-      # p 'obteniendo el doc', doc
-
       articles = doc.search('.BlogArticle_box__OYCvH .BlogArticle_content__rH5u2') # Para buscar los articulos
-      p 'obteniendo los articulos', articles
       articles_object = {}
       articles.each do |article|
         article_info = {}
@@ -53,18 +54,13 @@ class ArticlesController < ApplicationController
 
   def get_lecture_time(category, article_name)
     format_article_name = format_article_name(article_name) # Formateamos el nombre para poder escrapear el articulo
-    p 'esta es la url que estoy scrapeando', format_article_name
     url = "https://xepelin.com/blog/#{category}/#{format_article_name}"
     begin
-      # Configurar el controlador de Selenium
       options = Selenium::WebDriver::Chrome::Options.new
-      options.add_argument('--headless') # Ejecutar Chrome en modo headless (sin interfaz gráfica)
+      options.add_argument('--headless')
       driver = Selenium::WebDriver.for :chrome, options: options
-      # Abrir la página en el navegador
       driver.get(url)
-      # Esperar un momento para que la página cargue completamente (puedes ajustar el tiempo según sea necesario)
       sleep(2)
-      # Obtener el HTML de la página después de que se haya cargado
       doc = Nokogiri::HTML(driver.page_source)
       time = doc.search('.iaKuDo .justify-center .sc-fe594033-0').children.text.split(' ').first
       return time
@@ -80,13 +76,34 @@ class ArticlesController < ApplicationController
     return formatted_name
   end
 
-  def google_sheets
+  def write_google_sheets(articles_info)
+    p 'writing...'
     session = GoogleDrive::Session.from_service_account_key("client_secret.json")
-    p 'this is the session', session
     spreadsheet = session.spreadsheet_by_title("GoogleSheets app")
-    p 'this is the spreadsheet', spreadsheet
-    worksheet = spreadsheet.worksheets.first
-    p 'this is the worksheet', worksheet
-    p 'LINEASSSS', worksheet.rows.first(5)
+    worksheet = spreadsheet.worksheets[1]
+    articles_info.each do |_key, value|
+      p 'esta es la info...', value
+      worksheet.insert_rows(worksheet.num_rows + 1, [[value[:title], value[:author], value[:category], value[:time], '--']])
+    end
+    worksheet.save
+  end
+
+  def clean_google_sheets
+    session = GoogleDrive::Session.from_service_account_key('client_secret.json')
+    spreadsheet = session.spreadsheet_by_title('GoogleSheets app')
+    worksheet = spreadsheet.worksheets[1]
+    # Define el rango de celdas que deseas borrar (columnas A a E, desde la fila 2 hacia abajo)
+    start_row = 2
+    end_row = worksheet.num_rows  # Esto obtiene el número total de filas en la hoja
+    start_column = 1  # Columna A
+    end_column = 5    # Columna E
+    # Itetación para borrar el contenido de las celdas en el rango especificado
+    (start_row..end_row).each do |row_index|
+      (start_column..end_column).each do |column_index|
+        worksheet[row_index, column_index] = nil
+      end
+    end
+    # Guarda los cambios en la hoja de cálculo
+    worksheet.save
   end
 end
