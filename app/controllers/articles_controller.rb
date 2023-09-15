@@ -75,7 +75,7 @@ class ArticlesController < ApplicationController
       options.add_argument('--no-sandbox')
       options.add_argument('--disable-gpu')
       options.add_argument('--disable-software-rasterizer')
-      options.add_argument("--chromedriver-version=116.0.5845.0")
+      options.add_argument("--chromedriver-version=116.0.5845.96")
 
 
       chrome_bin = ENV.fetch('GOOGLE_CHROME_SHIM', nil)
