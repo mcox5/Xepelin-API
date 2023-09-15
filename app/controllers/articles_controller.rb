@@ -33,6 +33,14 @@ class ArticlesController < ApplicationController
     begin
       options = Selenium::WebDriver::Chrome::Options.new
       options.add_argument('--headless') # Ejecutar Chrome en modo headless (sin interfaz gráfica)
+      options.add_argument('--disable-dev-shm-usage')
+      options.add_argument('--no-sandbox')
+      options.add_argument('--disable-gpu')
+      options.add_argument('--disable-software-rasterizer')
+
+      chrome_bin = ENV.fetch('GOOGLE_CHROME_SHIM', nil)
+      options.binary = chrome_bin if chrome_bin
+
       driver = Selenium::WebDriver.for :chrome, options: options
       driver.get(url)
       sleep(2)
@@ -61,6 +69,14 @@ class ArticlesController < ApplicationController
     begin
       options = Selenium::WebDriver::Chrome::Options.new
       options.add_argument('--headless')
+      options.add_argument('--disable-dev-shm-usage')
+      options.add_argument('--no-sandbox')
+      options.add_argument('--disable-gpu')
+      options.add_argument('--disable-software-rasterizer')
+
+      chrome_bin = ENV.fetch('GOOGLE_CHROME_SHIM', nil)
+      options.binary = chrome_bin if chrome_bin
+      
       driver = Selenium::WebDriver.for :chrome, options: options
       driver.get(url)
       sleep(2)
