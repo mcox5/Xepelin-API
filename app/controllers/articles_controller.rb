@@ -1,15 +1,15 @@
 require 'nokogiri'
 require 'selenium-webdriver'
 require 'google_drive'
-
 class ArticlesController < ApplicationController
   def index
     head :ok
   end
 
   def scrapping
+    categories = ['emprendedores', 'pymes', 'corporativos', 'empresarios-exitosos', 'educacion-financiera', 'noticias']
     request_data = JSON.parse(request.body.read)
-    if request_data["category"].is_a?(String) && request_data["url"].is_a?(String)
+    if categories.include?(request_data['category']) && request_data["url"].is_a?(String)
       category = request_data['category']
       webhook = request_data['webhook']
       clean_google_sheets # 1: Limpiamos la hoja de calculo
