@@ -9,6 +9,7 @@ class ArticlesController < ApplicationController
   end
 
   def scrapping
+    puts 'SCRAPPING!'
     categories = ['emprendedores', 'pymes', 'corporativos', 'empresarios-exitosos', 'educacion-financiera', 'noticias']
     request_data = JSON.parse(request.body.read)
     if categories.include?(request_data['category']) && request_data["webhook"].is_a?(String)
